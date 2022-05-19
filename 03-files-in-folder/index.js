@@ -1,13 +1,13 @@
 const path = require('path');
-const fs = require('fs');
+const fs = require('fs/promises');
 const { stdout } = process;
 
 const dirPath = path.join(__dirname, 'secret-folder');
-fs.readdir(dirPath, {withFileTypes: true}, (err, files) => {
-  if (err) throw err.message();
+
+fs.readdir(dirPath, {withFileTypes: true}).then((files) => {
   files.forEach(file => {
     const filePath = dirPath + '\\' + file.name;
-    fs.stat(filePath, (err, data) => {
+    fs.stat(filePath).then((data) => {
       if (data.isFile()) {
         const name = file.name.slice(0, file.name.lastIndexOf('.'));
         const ext = path.extname(filePath).slice(path.extname(filePath).lastIndexOf('.') + 1);
