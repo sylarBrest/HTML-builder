@@ -7,9 +7,9 @@ const dirProject = path.join(__dirname, 'project-dist');
 async function startProject() {
   await fs.promises.rm(dirProject, { recursive: true, force: true });
   await fs.promises.mkdir(dirProject);
-  copyAssets(path.join(__dirname, 'assets'), path.join(dirProject, 'assets'));
-  workWithStyles();
-  makeIndex();
+  await copyAssets(path.join(__dirname, 'assets'), path.join(dirProject, 'assets'));
+  await workWithStyles();
+  await makeIndex();
 }
 
 // Copy recursively directory 'assets' in 'project-dist'
@@ -28,38 +28,26 @@ async function copyAssets(dirPathIn, dirPathOut) {
 }
 
 // Merge styles in one file
-function workWithStyles() {
+async function workWithStyles() {
   const writeStream = fs.createWriteStream(path.join(dirProject, 'style.css'), 'utf-8');
 
   const sourceStylePath = path.join(__dirname, 'styles');
 
-  function readStream(stream) {
-    return new Promise((resolve, reject) => {
-      let data = '';
-      stream.on('data', (chunk) => data += chunk);
-      stream.on('end', () => resolve(`${data}\n`));
-      stream.on('error', (err) => reject(err));
-    });
-  }
-    
-  (async () => {
-    const files = await fs.promises.readdir(sourceStylePath, {withFileTypes: true});
-    files.forEach(async (file) => {
-      const filePath = path.join(sourceStylePath, file.name);
-      if (file.isFile() && (path.extname(filePath) === '.css')) {
-        const stream = fs.createReadStream(filePath, 'utf-8');
-        const fileData = await readStream(stream);
-        writeStream.write(fileData);
-      }
-    });
-  })();
+  const files = await fs.promises.readdir(sourceStylePath, { withFileTypes: true });
+  files.filter((file) => file.isFile()).forEach(async (file) => {
+    const filePath = path.join(sourceStylePath, file.name);
+    if (path.extname(filePath) === '.css') {
+      const readStream = fs.createReadStream(filePath, 'utf-8');
+      readStream.pipe(writeStream);
+    }
+  });
 }
 
 // Get HTML files
 const htmlTemplates = async function() {
   const res = {};
   const componentsPath = path.join(__dirname, 'components');
-  const components = await fs.promises.readdir(componentsPath, {withFileTypes: true});
+  const components = await fs.promises.readdir(componentsPath, { withFileTypes: true });
   for (const file of components) {
     const filePath = path.join(componentsPath, file.name);
     if (file.isFile() && (path.extname(filePath) === '.html')) {
