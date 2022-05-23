@@ -7,4 +7,4 @@ let data = '';
 
 stream.on('data', (chunk) => data += chunk);
 stream.on('end', () => stdout.write(data));
-stream.on('error', (err) => console.log(err.message));
+stream.on('error', (err) => stdout.write(err.message));
